@@ -1,6 +1,18 @@
 """
 Основной скрипт обучения
 Запускается на любой платформе
+
+# Локально
+python train.py --platform local --max_videos 100
+
+# Google Colab
+python train.py --platform colab --max_videos 500
+
+# Yandex DataSphere
+python train.py --platform datasphere --batch_size 16
+
+# Shadow сервер
+python train.py --platform shadow --epochs 50
 """
 
 import os
