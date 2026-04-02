@@ -1,13 +1,17 @@
-# dactyl-recognition
+# Dactyl Recognition - распознавание дактилем
 
-# 1. Скачать код
-git clone https://github.com/yourname/dactyl-recognition.git
+## Описание проекта
+Модель для распознавания жестов (дактилем) по видео. 
+Обучается на датасете русских жестов.
 
-# 2. Получить доступ к данным
-#    (вы даете им доступ к папке на Google Диске)
+## Участники
+- @username1 - архитектура модели
+- @username2 - датасет и аугментации
+- @username3 - оптимизация и метрики
 
-# 3. Настроить config.py под свою платформу
-#    (они меняют PLATFORM и пути на свои)
+## Быстрый старт
 
-# 4. Запустить обучение
-python train.py --platform colab --max_videos 100
+### 1. Клонировать репозиторий
+```bash
+git clone https://github.com/ваш-username/dactyl-recognition.git
+cd dactyl-recognition
