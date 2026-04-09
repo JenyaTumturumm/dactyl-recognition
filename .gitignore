@@ -103,8 +103,8 @@ ENV/
 
 
 # Added
-logs/
-runs/
-weights/
+HandReader/logs/
+HandReader/runs/
+HandReader/weights/
 
 *.zip
