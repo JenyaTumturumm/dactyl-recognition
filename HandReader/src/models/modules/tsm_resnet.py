@@ -449,7 +449,7 @@ class FeatureExtracter(nn.Module):
         self.num_frames = input_lenghts
         src = self.resnet(src)
 
-        src_pad = torch.zeros(len(input_lenghts), input_lenghts.max(), 512).cuda()
+        src_pad = torch.zeros(len(input_lenghts), input_lenghts.max(), 512).to(src.device)
         cummulative_margin = 0
 
         # fill in padding to restore temporal dimension
