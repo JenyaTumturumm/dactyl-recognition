@@ -10,7 +10,7 @@ import rootutils
 from tqdm import tqdm
 
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
-from app.RGB_KP.exctract_landmarks_from_frames import get_kept_ids, process_landmarks
+from scripts.RGB_KP.exctract_landmarks_from_frames import get_kept_ids, process_landmarks
 
 mp_holistic = mp.solutions.holistic.Holistic(
     static_image_mode=True,

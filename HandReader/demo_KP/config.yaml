@@ -1,6 +1,6 @@
 
-chars_ctc: "_ &'.@abcdefghijklmnopqrstuvwxyz"
-# chars_ctc: "_ абвгдежзийклмнопрстуфхцчшщъыьэюяё"
+# chars_ctc: "_ &'.@abcdefghijklmnopqrstuvwxyz"
+chars_ctc: "_ абвгдежзийклмнопрстуфхцчшщъыьэюяё"
 classes_ctc: ${len:${chars_ctc}}
 fe:
   num_keypoints: 54
