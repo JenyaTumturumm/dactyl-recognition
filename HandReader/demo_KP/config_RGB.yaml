@@ -1,0 +1,11 @@
+
+# chars_ctc: "_ &'.@abcdefghijklmnopqrstuvwxyz"
+chars_ctc: "_ абвгдежзийклмнопрстуфхцчшщъыьэюяё"
+classes_ctc: ${len:${chars_ctc}}
+decoder:
+  input_dim: 1024
+  hidden_dim: 1024
+  num_layers: 2
+  num_classes: ${classes_ctc}
+  bidirectional: true
+  return_outs: false

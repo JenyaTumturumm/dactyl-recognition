@@ -38,12 +38,13 @@ class Preprocessing(nn.Module):
         x[torch.isnan(x)] = 0
         return x
 
-    def forward(self, x, filtered_columns: list[int] = None):
+    def forward(self, x, filtered_columns: list[int] = None, no_reshaping: bool = False):
         # seq_len, 3* n_landmarks -> seq_len, n_landmarks, 3
 
         if filtered_columns is not None and len(filtered_columns) > 1:
             x = x[:, filtered_columns]
-        x = x.reshape(x.shape[0], 3, -1).permute(0, 2, 1)
+        if not no_reshaping:
+            x = x.reshape(x.shape[0], 3, -1).permute(0, 2, 1)
 
         # Normalize & fill nans
         x = self.normalize(x)
