@@ -216,8 +216,10 @@ class JointEncoders(nn.Module):
         self.decoder = decoder
         self.decoder_net = decoder_net
         self.reduction = reduction
-        self.weights1 = nn.Parameter(torch.randn(4, 1, 1024)).cuda()
-        self.weights2 = nn.Parameter(torch.randn(4, 1, 1024)).cuda()
+        if "weight_sum" in reduction:
+            self.weights1 = nn.Parameter(torch.randn(4, 1, 1024)) #.cuda()
+        if "weight_sum2" in reduction:
+            self.weights2 = nn.Parameter(torch.randn(4, 1, 1024)) #.cuda()
 
     def forward(self, x_rgb, x_kp, input_lenghts=None):
         """
