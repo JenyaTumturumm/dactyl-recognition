@@ -6,6 +6,7 @@ from matplotlib.axes import Axes
 from typing import List, Tuple, Union
 from enum import Enum
 from mediapipe.python.solutions import hands as mp_hands
+from mediapipe.python.solutions import face_mesh as mp_face
 
 # ============================================================
 # НОРМАЛИЗАЦИЯ (ImageNet)
@@ -13,10 +14,15 @@ from mediapipe.python.solutions import hands as mp_hands
 NORM_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 NORM_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
+
+class Handedness(Enum):
+    LEFT = 0
+    RIGHT = 1
+    MOUTH = 2
+
 # ============================================================
 # ДЕТЕКЦИЯ РУКИ
 # ============================================================
-# mp_hands = mp.solutions.hands
 MAX_NUM_HANDS = 2
 base_hands_detector = mp_hands.Hands(
     static_image_mode=True,
@@ -25,11 +31,7 @@ base_hands_detector = mp_hands.Hands(
     min_tracking_confidence=0.5
 )
 
-class Handedness(Enum):
-    LEFT = 0
-    RIGHT = 1
-
-def crop_hand_region(frame_rgb: np.ndarray, padding=50, hands_detector: mp_hands.Hands = base_hands_detector):
+def crop_hand_region(frame_rgb: np.ndarray, padding=0.7, hands_detector: mp_hands.Hands = base_hands_detector):
     """
     Обнаруживает руку и вырезает КВАДРАТ вокруг неё (чтобы не искажать пропорции).
     """
@@ -73,7 +75,10 @@ def crop_hand_region(frame_rgb: np.ndarray, padding=50, hands_detector: mp_hands
         # Размер квадрата = максимальный размер руки + отступ
         hand_width = max(x_coords) - min(x_coords)
         hand_height = max(y_coords) - min(y_coords)
-        half_size = max(hand_width, hand_height) / 2 + padding
+        half_size = max(hand_width, hand_height) / 2
+        if isinstance(padding, float):
+            padding = int(half_size * padding)
+        half_size += padding
 
         x_min = max(0, int(center_x - half_size))
         y_min = max(0, int(center_y - half_size))
@@ -89,17 +94,76 @@ def crop_hand_region(frame_rgb: np.ndarray, padding=50, hands_detector: mp_hands
         crops[ind] = (frame_rgb[y_min:y_max, x_min:x_max], [x_min, y_min, x_max, y_max])
     return crops
 
+base_face_detector = mp_face.FaceMesh(
+    static_image_mode=True,
+    max_num_faces=1,
+    refine_landmarks=False,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
+)
+LIPS_KP = sorted(np.unique(list(mp_face.FACEMESH_LIPS)).flatten())
+
+def crop_mouth_region(frame_rgb: np.ndarray, padding=0.7, face_detector: mp_face.FaceMesh = base_face_detector):
+    """
+    Обнаруживает рот и вырезает КВАДРАТ вокруг него (чтобы не искажать пропорции).
+    """
+    h, w, _ = frame_rgb.shape
+    results = face_detector.process(frame_rgb)
+
+    crops = (frame_rgb, None)
+
+    if not results.multi_face_landmarks:
+        return crops
+
+    landmark: List = results.multi_face_landmarks[0].landmark
+
+    # Костыльненько но собрать ключевые точки губ
+    for ind in LIPS_KP:
+        landmark.append(landmark[ind])
+    while len(landmark) > len(LIPS_KP):
+        landmark.pop(0)
+    
+    x_coords = [lm.x * w for lm in landmark]
+    y_coords = [lm.y * h for lm in landmark]
+
+    # Центр руки
+    center_x = (min(x_coords) + max(x_coords)) / 2
+    center_y = (min(y_coords) + max(y_coords)) / 2
+
+    # Размер квадрата = максимальный размер руки + отступ
+    mouth_width = max(x_coords) - min(x_coords)
+    mouth_height = max(y_coords) - min(y_coords)
+    half_size = max(mouth_width, mouth_height) / 2
+    if isinstance(padding, float):
+        padding = int(half_size * padding)
+    half_size += padding
+
+    x_min = max(0, int(center_x - half_size))
+    y_min = max(0, int(center_y - half_size))
+    x_max = min(w, int(center_x + half_size))
+    y_max = min(h, int(center_y + half_size))
+
+    # Если вышли за границы — корректируем, сохраняя квадрат
+    if x_max - x_min != y_max - y_min:
+        size = min(x_max - x_min, y_max - y_min)
+        x_max = x_min + size
+        y_max = y_min + size
+
+    crops = (frame_rgb[y_min:y_max, x_min:x_max], [x_min, y_min, x_max, y_max])
+
+    return crops
+
 # ============================================================
 # ПРЕДОБРАБОТКА КАДРОВ (С КРОПОМ)
 # ============================================================
-def preprocess_frames(video, img_size=224, crop_hand=True, dynamic_crop=False, handedness=Handedness.RIGHT, convert_colors=True):
+def preprocess_frames(video, img_size=224, crop=True, dynamic_crop=False, handedness=Handedness.RIGHT, convert_colors=True):
     """
     Возвращает предобработанный список кадров видео
 
     Args:
         video: путь к видео или список фреймов
         img_size: размер для ресайза
-        crop_hand: детектировать и кропать руку (True/False)
+        crop: детектировать и кропать область тела (True/False)
         dynamic_crop: учитывать динамику при кропе
     """
     frames: List[np.ndarray] = []
@@ -119,13 +183,22 @@ def preprocess_frames(video, img_size=224, crop_hand=True, dynamic_crop=False, h
 
     crop_bboxes: List[Union[None, Tuple[int, int, int, int]]] = []
 
-    if dynamic_crop:
-        detector = mp_hands.Hands(
-            static_image_mode=True,
-            max_num_hands=MAX_NUM_HANDS,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
-        )
+    if crop and dynamic_crop:
+        if handedness == Handedness.MOUTH:
+            detector = mp_face.FaceMesh(
+                static_image_mode=False,
+                max_num_faces=1,
+                refine_landmarks=False,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5
+            )
+        else:
+            detector = mp_hands.Hands(
+                static_image_mode=False,
+                max_num_hands=MAX_NUM_HANDS,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5
+            )
 
     last_bbox_ind = None
     x_diff = 0
@@ -138,9 +211,13 @@ def preprocess_frames(video, img_size=224, crop_hand=True, dynamic_crop=False, h
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # ДЕТЕКЦИЯ И КРОП РУКИ
-        if crop_hand:
-            kwargs = {"hands_detector": detector} if dynamic_crop else {}
-            frame, bbox = crop_hand_region(frame, padding=30, **kwargs)[handedness.value]
+        if crop:
+            if handedness == Handedness.MOUTH:
+                kwargs = {"face_detector": detector} if dynamic_crop else {}
+                frame, bbox = crop_mouth_region(frame, **kwargs)
+            else:
+                kwargs = {"hands_detector": detector} if dynamic_crop else {}
+                frame, bbox = crop_hand_region(frame, **kwargs)[handedness.value]
             if bbox is not None and last_bbox_ind is None:
                 last_bbox_ind = len(crop_bboxes)
             crop_bboxes.append(bbox)
@@ -148,7 +225,7 @@ def preprocess_frames(video, img_size=224, crop_hand=True, dynamic_crop=False, h
         frames[i] = frame
 
     for i in range(len(frames)):
-        if crop_hand and (crop_bboxes[i] is not None):
+        if crop and (crop_bboxes[i] is not None):
             last_bbox_ind = i
             for window_size, next_bbox in enumerate(crop_bboxes[i+1:], start=1):
                 if next_bbox is not None:
@@ -160,7 +237,7 @@ def preprocess_frames(video, img_size=224, crop_hand=True, dynamic_crop=False, h
                 x_diff = 0
                 y_diff = 0
 
-        if crop_hand and last_bbox_ind and (crop_bboxes[i] is None):
+        if crop and last_bbox_ind and (crop_bboxes[i] is None):
             multiplier = (i - last_bbox_ind) / window_size
             x_shift = round(x_diff * multiplier)
             y_shift = round(y_diff * multiplier)
