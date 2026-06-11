@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-import mediapipe as mp
+from mediapipe.python.solutions.holistic import Holistic
 import numpy as np
 import rootutils
 
@@ -10,7 +10,7 @@ from src.utils import LOGGER
 if len(LOGGER.handlers) > 1:
     LOGGER.handlers = []
 
-mp_holistic = mp.solutions.holistic.Holistic(
+mp_holistic = Holistic(
     static_image_mode=False,
     model_complexity=0,
     min_detection_confidence=0.5,
