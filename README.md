@@ -8,6 +8,7 @@
 ## Участники
 - [@JenyaTumturumm](https://github.com/JenyaTumturumm) &mdash; Предобработка данных, реализация _SupCon Loss_, аренда серверов, обучение модели
 - [@AjnoEO](https://github.com/AjnoEO) &mdash; Работа с литературой, сбор данных, адаптация кода _HandReader_, предобработка видео, приложение _StreamLit_
+- [@mbogautdinov](https://github.com/mbogautdinov) &mdash; Работа с литературой, сбор данных
 
 ## Опробовать модель
 
