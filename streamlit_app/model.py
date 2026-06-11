@@ -28,10 +28,11 @@ def load_weights_conf():
     import pathlib
 
     # ! TODO: UNCOMMENT
-    model_tensors_path = (
-        hf_hub_download(repo_id="Ajno/DactDetect", filename="weights_encoder.pt"),
-        hf_hub_download(repo_id="Ajno/DactDetect", filename="weights_decoder.pt"),
-    )
+    model_tensors_path = hf_hub_download(repo_id="Ajno/DactDetect", filename="weights.pt")
+    # model_tensors_path = (
+    #     hf_hub_download(repo_id="Ajno/DactDetect", filename="weights_encoder.pt"),
+    #     hf_hub_download(repo_id="Ajno/DactDetect", filename="weights_decoder.pt"),
+    # )
     # WEIGHTS_FOLDER = pathlib.Path("HandReader") / "weights" / "znaki"
     # model_tensors_path = WEIGHTS_FOLDER / "kp_rgb" / "best.pt"
     # model_tensors_path = WEIGHTS_FOLDER / "KP_RGB_ctc_supcon_ctc.pt"
@@ -40,6 +41,7 @@ def load_weights_conf():
     #     WEIGHTS_FOLDER / "KP_RGB_ctc_supcon_ctc_decoder.pt"
     # )
     # model_tensors_path = WEIGHTS_FOLDER / "KP_RGB_ctc_supcon_ctc_decoder.pt"
+    # model_tensors_path = WEIGHTS_FOLDER / "KP_RGB_ctc_supcon_ctc_last.pt"
 
     OmegaConf.register_new_resolver("len", lambda x: len(x), replace=True)
     conf_path = pathlib.Path("HandReader") / "demo_KP" / "config_KP_RGB.yaml"

@@ -31,6 +31,8 @@ DEVICE = get_device()
 def get_model():
     weights_path, conf = load_weights_conf()
 
+    full_model = make_full_model_for_inference(conf)
+
     # encoder, decoder = load_kp_rgb_model(None, conf)
     # # encoder, decoder = load_kp_rgb_model(weights_path, conf)
     
@@ -39,12 +41,11 @@ def get_model():
     # char_decoder = CharDecoder(char_list)
 
     # model = FullKPRGBModel(encoder, decoder, char_decoder).to(DEVICE)
-    # model.load_state_dict(torch.load(weights_path, DEVICE)["model_state_dict"])
+    full_model.load_state_dict(torch.load(weights_path, DEVICE)["model_state_dict"])
 
     # return encoder, decoder
 
-    full_model = make_full_model_for_inference(conf)
-    load_encoder_and_decoder(full_model, *weights_path)
+    # load_encoder_and_decoder(full_model, *weights_path)
     return full_model
 
 @st.cache_data(show_spinner=False)
