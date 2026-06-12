@@ -1,6 +1,12 @@
 """
 Приложение Streamlit
 """
+import os
+
+# Set a writable directory for MediaPipe models
+os.environ['MEDIAPIPE_DOWNLOAD_PATH'] = '/tmp/mediapipe'
+os.makedirs(os.environ['MEDIAPIPE_DOWNLOAD_PATH'], exist_ok=True)
+
 from HandReader.demo_KP.kp_proccesor import process_landmarks
 from demo_KP.utils import get_vocab, getRuTokens
 from src.utils import Decoder as CharDecoder
